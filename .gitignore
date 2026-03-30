@@ -14,3 +14,6 @@ artifacts/
 *.db
 data/processed/*.csv
 models/*.pkl
+data/runs/
+models/
+monitoring/telemetry_state.json
