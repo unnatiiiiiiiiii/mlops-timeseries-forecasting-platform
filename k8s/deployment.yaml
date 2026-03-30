@@ -1,0 +1,133 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forecasting-api-stable
+  labels:
+    app: forecasting-api
+    track: stable
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: forecasting-api
+      track: stable
+  template:
+    metadata:
+      labels:
+        app: forecasting-api
+        track: stable
+    spec:
+      containers:
+        - name: api
+          image: your-registry/forecasting-api:stable
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            failureThreshold: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          env:
+            - name: MLFLOW_TRACKING_URI
+              value: http://mlflow:5000
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: forecasting-secrets
+                  key: DATABASE_URL
+            - name: SLACK_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: forecasting-secrets
+                  key: SLACK_WEBHOOK_URL
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forecasting-api-canary
+  labels:
+    app: forecasting-api
+    track: canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: forecasting-api
+      track: canary
+  template:
+    metadata:
+      labels:
+        app: forecasting-api
+        track: canary
+    spec:
+      containers:
+        - name: api
+          image: your-registry/forecasting-api:canary
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "384Mi"
+            limits:
+              cpu: "800m"
+              memory: "768Mi"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            failureThreshold: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          env:
+            - name: MLFLOW_TRACKING_URI
+              value: http://mlflow:5000
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: forecasting-secrets
+                  key: DATABASE_URL
+            - name: SLACK_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: forecasting-secrets
+                  key: SLACK_WEBHOOK_URL

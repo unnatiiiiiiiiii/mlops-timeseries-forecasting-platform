@@ -1,0 +1,105 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mlops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mlops}
+      POSTGRES_DB: ${POSTGRES_DB:-mlops}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.19.0
+    command: mlflow server --host 0.0.0.0 --port 5000
+    ports:
+      - "5000:5000"
+
+  api:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.api
+    environment:
+      PYTHONPATH: /app/src
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://mlops:mlops@postgres:5432/mlops}
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+    depends_on:
+      - postgres
+      - mlflow
+    ports:
+      - "8000:8000"
+
+  registry-inference-api:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.api
+    environment:
+      PYTHONPATH: /app/src
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
+      MLFLOW_REGISTERED_MODEL_NAME: ${MLFLOW_REGISTERED_MODEL_NAME:-forecasting-model}
+      MLFLOW_MODEL_STAGE: ${MLFLOW_MODEL_STAGE:-Production}
+      REGISTRY_REFRESH_SECONDS: ${REGISTRY_REFRESH_SECONDS:-60}
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+    command: ["uvicorn", "services.inference_api:app", "--host", "0.0.0.0", "--port", "8001"]
+    depends_on:
+      - mlflow
+    ports:
+      - "8001:8001"
+
+  airflow:
+    image: apache/airflow:2.10.3
+    environment:
+      PYTHONPATH: /opt/airflow/project/src
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
+    volumes:
+      - type: bind
+        source: ../../airflow/dags
+        target: /opt/airflow/dags
+      - type: bind
+        source: ../..
+        target: /opt/airflow/project
+    command: standalone
+    ports:
+      - "8080:8080"
+
+  metrics-exporter:
+    image: python:3.11-slim
+    working_dir: /app
+    environment:
+      PYTHONPATH: /app/src
+      TELEMETRY_STATE_PATH: /app/monitoring/telemetry_state.json
+      METRICS_PORT: "9100"
+    volumes:
+      - type: bind
+        source: ../..
+        target: /app
+    command: ["python", "scripts/metrics_exporter.py"]
+    ports:
+      - "9100:9100"
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - type: bind
+        source: ./prometheus.yml
+        target: /etc/prometheus/prometheus.yml
+    ports:
+      - "9092:9090"
+    depends_on:
+      - metrics-exporter
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    ports:
+      - "3002:3000"
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:

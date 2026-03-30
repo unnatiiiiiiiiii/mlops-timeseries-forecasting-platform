@@ -1,0 +1,16 @@
+.venv/
+.deps/
+.run_deps/
+.pytest_cache/
+__pycache__/
+*.pyc
+.tmp/
+.env
+*.env
+.env.*
+mlruns/
+artifacts/
+*.log
+*.db
+data/processed/*.csv
+models/*.pkl
