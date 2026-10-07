@@ -7,7 +7,11 @@ COPY requirements.api.txt .
 RUN pip install --no-cache-dir -r requirements.api.txt
 
 # Copy application code
-COPY . .
+COPY src/ ./src/
+COPY services/ ./services/
+
+# Create directories that may not exist in repo
+RUN mkdir -p models data
 
 # Set environment
 ENV PYTHONPATH=/app/src

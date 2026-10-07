@@ -13,7 +13,14 @@ artifacts/
 *.log
 *.db
 data/processed/*.csv
-models/*.pkl
 data/runs/
-models/
 monitoring/telemetry_state.json
+
+# Ignore models directory contents but keep structure
+models/*
+!models/.gitkeep
+
+# Ignore data directory contents but keep structure
+data/*
+!data/.gitkeep
+!data/raw/
