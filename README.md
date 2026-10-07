@@ -2,6 +2,11 @@
 
 Production-style MLOps platform for forecasting with configurable ingestion, champion/challenger training, autonomous retraining triggers, API serving, monitoring, and canary gating.
 
+## 🚀 Quick Deploy (5 minutes)
+**Deploy to Railway.app in 5 minutes!** → See [QUICKSTART.md](./QUICKSTART.md)
+
+**Full deployment options** (Railway, Render, Fly.io, AWS, etc.) → See [DEPLOYMENT.md](./DEPLOYMENT.md)
+
 ## Public Project Link Setup
 - One-link public showcase page lives at `docs/index.md` (GitHub Pages-ready).
 - Publish guide: `docs/PUBLISH.md`.
