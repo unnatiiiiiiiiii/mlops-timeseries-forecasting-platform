@@ -15,11 +15,11 @@ COPY requirements.api.txt .
 RUN pip install --no-cache-dir -r requirements.api.txt
 
 # Copy application code
-COPY src/ ./src/
-COPY services/ ./services/
+COPY src/ /app/src/
+COPY services/ /app/services/
 
 # Create required directories
-RUN mkdir -p models data
+RUN mkdir -p /app/models /app/data
 
 # Set Python path
 ENV PYTHONPATH=/app/src
